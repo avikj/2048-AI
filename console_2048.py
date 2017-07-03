@@ -2,7 +2,7 @@ import sys
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-from game import GameBoard
+from lib.game import GameBoard
 from player import *
 
 
