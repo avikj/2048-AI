@@ -59,23 +59,29 @@ class GameBoard:
               moved = True
 
     return moved
+
   def can_move(self, direction):
     return self.copy().move(direction)
+
   def is_within_bounds(self, cell):
     return cell[0] < self.BOARD_SIZE and cell[1] < self.BOARD_SIZE and cell[0] >= 0 and cell[1] >= 0
 
   def is_board_full(self):
     return np.count_nonzero(self.board) == self.board.size
+
   def is_game_over(self):
     if not self.is_board_full():
       return False
     return not any([self.can_move(direction) for direction in [self.MOVE_UP, self.MOVE_RIGHT, self.MOVE_DOWN, self.MOVE_LEFT]])
+
   def current_score(self):
     return int(self.score)
+
   def copy(self):
     ret = GameBoard()
     ret.load_board(self.board)
     return ret
+
   def load_board(self, board):
     if board.shape != (self.BOARD_SIZE, self.BOARD_SIZE):
       raise ValueError('Board must have shape %s' % (self.BOARD_SIZE, self.BOARD_SIZE))

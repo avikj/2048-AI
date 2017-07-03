@@ -18,7 +18,7 @@ def main(args):
     if args.nrof_games != 1:
       if not args.quiet:
         print '\n\n\n'
-      print '\nGame #%s' % (n+1)
+      print '\nGame #%s' % (n + 1)
     board = GameBoard()
     while not board.is_game_over():
       if not args.quiet:
@@ -58,6 +58,7 @@ def main(args):
     plt.title('2048 Score Distribution')
     plt.show()
 
+
 def parse_arguments(argv):
   parser = argparse.ArgumentParser()
   parser.add_argument('-r', '--random_moves', help='Switch to run random simulation', action='store_true')
@@ -65,4 +66,6 @@ def parse_arguments(argv):
   parser.add_argument('-q', '--quiet', help='Switch to prevent printing boards.', action='store_true')
   parser.add_argument('-s', '--show_stats', help='Switch to show score stats.', action='store_true')
   return parser.parse_args(argv)
+
+
 main(parse_arguments(sys.argv[1:]))
