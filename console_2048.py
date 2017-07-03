@@ -1,9 +1,9 @@
 import sys
 import argparse
-import random
 import numpy as np
 import matplotlib.pyplot as plt
 from game import GameBoard
+from player import *
 
 
 def main(args):
@@ -13,6 +13,10 @@ def main(args):
       's': GameBoard.MOVE_DOWN,
       'd': GameBoard.MOVE_RIGHT,
   }
+  if args.random_moves:
+    player = RandomPlayer()
+  else:
+    player = HumanPlayer()
   scores = []
   for n in range(args.nrof_games):
     if args.nrof_games != 1:
@@ -25,15 +29,7 @@ def main(args):
         print 'Score: %d' % board.current_score()
       if not args.quiet:
         print board
-      move_letter = ' '
-      while len(move_letter) > 1 or move_letter not in 'wasd':
-        if args.random_moves:
-          move_letter = random.choice('wasd')
-          if not args.quiet:
-            print 'Randomly chose> %s\n' % move_letter
-        else:
-          move_letter = raw_input('Enter move (WASD)>').lower()
-
+      move_letter = player.get_move(board)
       moved = board.move(moves[move_letter])
       if not moved:
         if not args.quiet:
