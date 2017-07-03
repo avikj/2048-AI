@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 import random
 
+
 # Abstract player which returns move (WASD) given board
 class Player:
   __metaclass__ = ABCMeta
