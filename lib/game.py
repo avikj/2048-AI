@@ -77,12 +77,15 @@ class GameBoard:
   def current_score(self):
     return int(self.score)
 
+  def get_state(self):
+    return self.board
+
   def copy(self):
     ret = GameBoard()
-    ret.load_board(self.board)
+    ret.load_state(self.board)
     return ret
 
-  def load_board(self, board):
+  def load_state(self, board):
     if board.shape != (self.BOARD_SIZE, self.BOARD_SIZE):
       raise ValueError('Board must have shape %s' % (self.BOARD_SIZE, self.BOARD_SIZE))
     else:

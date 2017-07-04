@@ -3,8 +3,9 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from lib.game import GameBoard
-from player import *
-
+from lib.player import *
+from neft import NNPlayer, random_network_params
+import pickle
 
 def main(args):
   moves = {
@@ -13,10 +14,13 @@ def main(args):
       's': GameBoard.MOVE_DOWN,
       'd': GameBoard.MOVE_RIGHT,
   }
+
+  player = HumanPlayer()
   if args.random_moves:
     player = RandomPlayer()
-  else:
-    player = HumanPlayer()
+  if args.neft != '':
+    player = NNPlayer(pickle.load(open(args.neft)))
+    print player
   scores = []
   for n in range(args.nrof_games):
     if args.nrof_games != 1:
@@ -29,8 +33,8 @@ def main(args):
         print 'Score: %d' % board.current_score()
       if not args.quiet:
         print board
-      move_letter = player.get_move(board)
-      moved = board.move(moves[move_letter])
+      move = player.get_move(board)
+      moved = board.move(move)
       if not moved:
         if not args.quiet:
           print 'No tiles were moved.'
@@ -58,6 +62,7 @@ def main(args):
 def parse_arguments(argv):
   parser = argparse.ArgumentParser()
   parser.add_argument('-r', '--random_moves', help='Switch to run random simulation', action='store_true')
+  parser.add_argument('-f', '--neft', help='Param file to instantiate network with.', type=str, default='')
   parser.add_argument('-n', '--nrof_games', help='Number of games to play.', type=int, default=1)
   parser.add_argument('-q', '--quiet', help='Switch to prevent printing boards.', action='store_true')
   parser.add_argument('-s', '--show_stats', help='Switch to show score stats.', action='store_true')
