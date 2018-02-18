@@ -43,14 +43,20 @@ def next_generation(survivors):
 
 # return one child, determined by randomly swapping a neuron in parents and choosing more fit result
 def crossover_networks(mommy_params, daddy_params):
-  child_m = {'W_1': np.copy(mommy_params['W_1']), 'b_1': np.copy(mommy_params['b_1']), 'W_2': np.copy(mommy_params['W_2']), 'b_2': np.copy(mommy_params['b_2'])}
-  child_d = {'W_1': np.copy(daddy_params['W_1']), 'b_1': np.copy(daddy_params['b_1']), 'W_2': np.copy(daddy_params['W_2']), 'b_2': np.copy(daddy_params['b_2'])}
-  rand = np.random.rand()
+  child_m = []
+  child_d = []
+  for i in range(len(mommy_params)):
+    child_m.append({
+      'W': np.copy(mommy_params[i]['W']),
+      'b': np.copy(mommy_params[i]['b'])
+    })
+    child_d.append({
+      'W': np.copy(daddy_params[i]['W']),
+      'b': np.copy(daddy_params[i]['b'])
+    })
+  layer_to_crossover = np.random.choice(range(len(mommy_params)))
   # randomly select layer to perform crossover on
-  if rand < 0.7:  # crossover hidden layer
-    child_m['W_1'], child_d['W_1'] = crossover_layer_weights(mommy_params['W_1'], daddy_params['W_1'])
-  else:  # crossover output layer
-    child_m['W_2'], child_d['W_2'] = crossover_layer_weights(mommy_params['W_2'], daddy_params['W_2'])
+  child_m[layer_to_crossover], child_d[layer_to_crossover] = crossover_layer_weights_bias(mommy_params[layer_to_crossover], daddy_params[layer_to_crossover])
 
   if fitness(child_d) > fitness(child_m):
     return mutate_network(child_d)
@@ -58,30 +64,37 @@ def crossover_networks(mommy_params, daddy_params):
     return mutate_network(child_m)
 
 
-# return two children layers from randomly swapping a neuron/weight in parent layers
-def crossover_layer_weights(mommy_W, daddy_W, crossover_type="neuron"):
+# return two children layers from randomly swapping a neuron in parent layers
+def crossover_layer_weights_bias(mommy_layer, daddy_layer, crossover_type="neuron"):
   if crossover_type == 'neuron':
     # swap weights for random neuron in layer (matrix column)
-    rand_column = np.random.randint(mommy_W.shape[1])
-    mommy_column = np.copy(mommy_W[:, rand_column])
-    daddy_column = np.copy(daddy_W[:, rand_column])
-    child_m_W = np.copy(mommy_W)
-    child_d_W = np.copy(daddy_W)
-    child_m_W[:, rand_column] = daddy_column
-    child_d_W[:, rand_column] = mommy_column
-    return (child_m_W, child_d_W)
+    rand_column = np.random.randint(mommy_layer['W'].shape[1])
+    mommy_column_W = np.copy(mommy_layer['W'][:, rand_column])
+    daddy_column_W = np.copy(daddy_layer['W'][:, rand_column])
+    child_m_W = np.copy(mommy_layer['W'])
+    child_d_W = np.copy(daddy_layer['W'])
+    child_m_W[:, rand_column] = daddy_column_W
+    child_d_W[:, rand_column] = mommy_column_W
+
+    mommy_column_b = np.copy(mommy_layer['b'][rand_column])
+    daddy_column_b = np.copy(daddy_layer['b'][rand_column])
+    child_m_b = np.copy(mommy_layer['b'])
+    child_d_b = np.copy(daddy_layer['b'])
+    child_m_b[rand_column] = daddy_column_b
+    child_d_b[rand_column] = mommy_column_b
+    return ({'W':child_m_W, 'b':child_m_b}, {'W':child_d_W, 'b':child_d_b})
 
 
 # randomly mutate network weights in each layer
 def mutate_network(network_params):
-  network_params['W_1'] = mutate_weights(network_params['W_1'])
-  network_params['W_2'] = mutate_weights(network_params['W_2'])
+  for i in range(len(network_params)):
+    network_params[i]['W'] = mutate_weights(network_params[i]['W'])
+    network_params[i]['b'] = mutate_bias(network_params[i]['b'])
   return network_params
-
 
 # randomly mutate weights in a layer
 def mutate_weights(W):
-  if np.random.rand() < 0.2:
+  if np.random.rand() < 0.1:
     rand = np.random.rand()
     i = np.random.randint(W.shape[0])
     j = np.random.randint(W.shape[1])
@@ -93,7 +106,17 @@ def mutate_weights(W):
       W[i][j] *= -1
   return W
 
-
+def mutate_bias(b):
+  if np.random.rand() < 0.1:
+    rand = np.random.rand()
+    i = np.random.randint(b.size)
+    if rand < 0.5:
+      b[i] *= np.random.uniform(0.5, 1.5)
+    elif rand < 0.9:
+      b[i] += np.random.uniform(-1, 1)
+    else:
+      b[i] *= -1
+  return b
 # select n networks to be used as parents in the next generation, using tournament selection algorithm
 def select(network_fitnesses, n, k=10):
   selected_network_indices = []
@@ -130,19 +153,32 @@ def softmax(X):
   return np.divide(np.exp(X), np.sum(np.exp(X)))
 
 def random_network_params():
+  NUM_HIDDEN_LAYERS = 3
   INPUT_LAYER_SIZE = 16
   HIDDEN_LAYER_SIZE = 40
   OUTPUT_LAYER_SIZE = 4
   stddev = 0.1
-  W_1 = np.random.randn(INPUT_LAYER_SIZE, HIDDEN_LAYER_SIZE) * stddev
-  b_1 = np.random.randn(HIDDEN_LAYER_SIZE) * stddev
-  W_2 = np.random.randn(HIDDEN_LAYER_SIZE, OUTPUT_LAYER_SIZE) * stddev
-  b_2 = np.random.randn(OUTPUT_LAYER_SIZE) * stddev
-  return {'W_1': W_1, 'b_1': b_1, 'W_2': W_2, 'b_2': b_2}
+  params = []
+  W_i = np.random.randn(INPUT_LAYER_SIZE, HIDDEN_LAYER_SIZE) * stddev
+  b_i = np.random.randn(HIDDEN_LAYER_SIZE) * stddev
+  params.append({'W': W_i, 'b': b_i})
+
+  for i in range(NUM_HIDDEN_LAYERS-1):
+    W_h = np.random.randn(HIDDEN_LAYER_SIZE, HIDDEN_LAYER_SIZE) * stddev
+    b_h = np.random.randn(HIDDEN_LAYER_SIZE) * stddev
+    params.append({'W': W_h, 'b': b_h})
+
+  W_o = np.random.randn(HIDDEN_LAYER_SIZE, OUTPUT_LAYER_SIZE) * stddev
+  b_o = np.random.randn(OUTPUT_LAYER_SIZE) * stddev
+  params.append({'W': W_o, 'b': b_o})
+  return params
 
 def predict_move_proba(board_flat, network_params):
-  h = sigmoid(np.matmul(board_flat, network_params['W_1']) + network_params['b_1'])
-  y = softmax(np.matmul(h, network_params['W_2']) + network_params['b_2'])
+  current_layer = board_flat
+  for i in range(len(network_params)-1):
+    next_layer = sigmoid(np.matmul(current_layer, network_params[i]['W']) + network_params[i]['b'])
+    current_layer = next_layer
+  y = softmax(np.matmul(current_layer, network_params[-1]['W']) + network_params[-1]['b'])
   return y
 
 # 0: w, 1: a, 2: s, 3: d
